@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 .claude/
+
+# SQLite database
+data/app.db
+data/app.db-shm
+data/app.db-wal
