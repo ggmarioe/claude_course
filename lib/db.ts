@@ -1,20 +1,21 @@
-import { Database } from "bun:sqlite";
+import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 
-mkdirSync("data", { recursive: true });
+declare const globalThis: {
+  __db?: Database.Database;
+};
 
-let _db: Database | null = null;
-
-export function getDb(): Database {
-  if (!_db) {
-    _db = new Database("data/app.db");
-    _db.exec("PRAGMA journal_mode=WAL;");
-    initSchema(_db);
+export function getDb(): Database.Database {
+  if (!globalThis.__db) {
+    mkdirSync("data", { recursive: true });
+    globalThis.__db = new Database("data/app.db");
+    globalThis.__db.pragma("journal_mode = WAL");
+    initSchema(globalThis.__db);
   }
-  return _db;
+  return globalThis.__db;
 }
 
-function initSchema(db: Database): void {
+function initSchema(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS user (
       id TEXT PRIMARY KEY,
@@ -83,13 +84,13 @@ function initSchema(db: Database): void {
 }
 
 export function query<T>(sql: string, params: unknown[] = []): T[] {
-  return getDb().query(sql).all(...params) as T[];
+  return getDb().prepare(sql).all(...params) as T[];
 }
 
 export function get<T>(sql: string, params: unknown[] = []): T | undefined {
-  return getDb().query(sql).get(...params) as T | undefined;
+  return getDb().prepare(sql).get(...params) as T | undefined;
 }
 
 export function run(sql: string, params: unknown[] = []): void {
-  getDb().query(sql).run(...params);
+  getDb().prepare(sql).run(...params);
 }
